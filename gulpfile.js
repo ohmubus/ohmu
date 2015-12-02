@@ -1,4 +1,6 @@
 const path      = require("path")
+    , exec      = require("child_process").exec
+    , through   = require("through")
 
 const gulp      = require("gulp")
     , gConn     = require("gulp-connect")
@@ -12,6 +14,25 @@ const connectConf = {
     root: path.join(__dirname, "lib"),
     livereload: process.env.RELOAD === "false" ? false : true
 }
+
+/*
+ *gulp.task("bark", () => { console.log(process.argv)})
+ *
+ *gulp.task("ship", () => {
+ *    gulp.src("lib/ohmu.js").pipe(gulp.dest("dist"))
+ *
+ *    var bump = exec("echo nanners")
+ *
+ *    bump.stdout.pipe(through(function (output) {
+ *        console.log(output) // maybe this
+ *        this.queue(output)
+ *    }))
+ *    .pipe(process.stdout)
+ *
+ *    bump.stderr.pipe(process.stderr)
+ *
+ *})
+ */
 
 
 gulp.task("serve", () => {

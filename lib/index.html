@@ -6,12 +6,18 @@
             body {
                 font-family: sans-serif;
             }
+
+            .mah-tests {
+                padding-left: 3rem;
+            }
         </style>
     </head>
 
     <body>
-        <h1> The Ohmu Are Coming </h1>
-        <div id="mocha"></div>
+        <div class="mah-tests">
+            <h1> The Ohmu Are Coming </h1>
+            <div id="mocha"></div>
+        </div>
 
         <script src="vendor/should.js" type="application/javascript"></script>
         <script src="vendor/mocha.js" type="application/javascript"></script>
@@ -28,7 +34,7 @@
 
         <script type="application/javascript">
             mocha.checkLeaks()
-            mocha.globals(["jQuery"])
+            mocha.globals(["jQuery", "catbus", "LiveReload"])
             mocha.run()
         </script>
     </body>

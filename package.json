@@ -1,0 +1,28 @@
+{
+  "name": "ohmu",
+  "version": "1.0.0",
+  "description": "async file dependency library",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/DarkMarmot/ohmu.git"
+  },
+  "keywords": [
+    "async",
+    "file",
+    "dependency"
+  ],
+  "author": "Scott Southworth <scott.southworth@gmail.com> (https://twitter.com/DarkMarmot)",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/DarkMarmot/ohmu/issues"
+  },
+  "homepage": "https://github.com/DarkMarmot/ohmu",
+  "dependencies": {
+    "catbus": "^2.0.7",
+    "jquery": "^2.1.4"
+  }
+}

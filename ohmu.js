@@ -28,8 +28,10 @@
     // topics: info, failed, done, dependency
 
     ohmnu.sensor = function sensor(url, topic){
+
         var d = fileMonitor.demandData(url);
         return d.on(topic);
+
     };
 
     ohmu.request = function request(url, parsingMethod){
@@ -43,11 +45,12 @@
         initializeInfo(url, parsingMethod);
         download(url);
 
-
     };
 
     ohmu.suffix = function suffix(suffix){
+
         suffixOnRequests = suffix;
+
     };
 
     function initializeInfo(url, parsingMethod) {
@@ -66,6 +69,7 @@
         };
 
         d.write(info, 'info');
+
     }
 
     function download(url){
@@ -83,7 +87,6 @@
                 info.status = info.dependencies ? 'gather' : 'done'; // look for dependencies
                 d.write(info, 'info');
 
-
             })
             .fail(function(){
 
@@ -93,6 +96,7 @@
                 d.write(info, 'info');
 
             });
+
     }
 
     function infoChange(info){
@@ -113,8 +117,8 @@
             case 'gather':
                 downloadDependencies(info);
                 break;
-
         }
+
     }
 
     function considerDependencies(originUrl, dependencyInfo){
@@ -141,7 +145,6 @@
             info.status = 'done';
             origin.write(info, 'info');
         }
-
 
     }
 

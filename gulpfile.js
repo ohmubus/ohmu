@@ -6,8 +6,18 @@ const gulp      = require("gulp")
     , gConn     = require("gulp-connect")
 
 const paths = {
-    lib: "lib/**/*"
+    lib: "lib/**/*",
+    vendor_dist: "lib/vendor"
 }
+
+const vendor = [
+    "node_modules/sinon/pkg/sinon.js",
+    "node_modules/catbus/dist/catbus.js",
+    "node_modules/jquery/dist/jquery.js",
+    "node_modules/mocha/mocha.js",
+    "node_modules/mocha/mocha.css",
+    "node_modules/should/should.js"
+]
 
 const connectConf = {
     port: process.env.PORT || 3000,
@@ -34,6 +44,9 @@ const connectConf = {
  *})
  */
 
+gulp.task("vendor", () => {
+    gulp.src(vendor).pipe(gulp.dest(paths.vendor_dist))
+})
 
 gulp.task("serve", () => {
     gConn.server(connectConf)
@@ -45,6 +58,7 @@ gulp.task("reload", () => {
 
 gulp.task("watch", () => {
     gulp.watch(paths.lib, ["reload"])
+    gulp.watch(vendor, ["vendor"])
 })
 
-gulp.task("default", ["serve", "watch"])
+gulp.task("default", ["vendor", "serve", "watch"])

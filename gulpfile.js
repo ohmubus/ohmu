@@ -6,7 +6,7 @@ const gulp      = require("gulp")
     , gConn     = require("gulp-connect")
 
 const paths = {
-    lib: "lib/**/*",
+    lib: "lib/*",
     vendor_dist: "lib/vendor"
 }
 
@@ -20,7 +20,7 @@ const vendor = [
 ]
 
 const connectConf = {
-    port: process.env.PORT || 3000,
+    port: process.env.PORT || 3005,
     root: path.join(__dirname, "lib"),
     livereload: process.env.RELOAD === "false" ? false : true
 }

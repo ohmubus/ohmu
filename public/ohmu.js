@@ -22,37 +22,37 @@
 
     var ohmu = {};
     var bus = this.catbus;
-    var fileMonitor = bus.demandTree('OHMU'); // todo host should be within a tree
+    var fileMonitor = bus.demandTree('OHMU'); // todo host should be defined within a tree
     var suffixOnRequests = '';
 
-    // topics: info, failed, done, dependency
+    var statusData = fileMonitor.demandData('STATUS'); // topics are urls, data is status: new, loaded, failed, done
+    var infoData = fileMonitor.demandData('INFO'); // topics are urls, data is full file dependency info
 
-    ohmnu.sensor = function sensor(url, topic){
+    // file status: new, loaded, failed, done
+
+    // topics: info, require, failed, done, dependency
+
+
+    ohmu.sensor = function sensor(url, topic){
         var d = fileMonitor.demandData(url);
         return d.on(topic);
     };
 
-    ohmu.request = function request(url, parsingMethod){
+    ohmu.request = function request(url){
 
-        var d = fileMonitor.demandData(url);
-        var info = d.read('info');
-        if(info && info.status !== 'failed') return; // already requested
-
-        d.on('info').run(infoChange);
-
-        initializeInfo(url, parsingMethod);
-        download(url);
-
+        var info = infoData.read(url);
+        if(!info)
+            initializeInfo(url);
 
     };
+
 
     ohmu.suffix = function suffix(suffix){
         suffixOnRequests = suffix;
     };
 
-    function initializeInfo(url, parsingMethod) {
+    function initializeInfo(url) {
 
-        var d = fileMonitor.demandData(url);
 
         var info = {
             url: url,
@@ -60,133 +60,191 @@
             error_text: '',
             file_text: '',
             status: 'new',
-            parsing_method: parsingMethod,
-            dependencies: null,
-            dependencies_status: {}
+            direct_dependencies: [],
+            all_dependencies: {} // key is url, value is status
         };
 
-        d.write(info, 'info');
+        infoData.write(info, url);
+        infoData.on(url).host(url).emit(url).pipe(statusData).auto();
+        statusData.on(url).host(url).emit(url).extract('status').change().run(statusChanged).auto();
+
+    }
+
+    var statusCallbacks = {
+        new: download,
+        error: retryDownload
+    };
+
+    function statusChanged(status, url){
+        var method = statusCallbacks[status];
+        if(method)
+            method.call(null, url);
+    }
+
+    function updateFileInfo(info, url){
+        infoData.write(info, url);
     }
 
     function download(url){
 
-        var d = fileMonitor.demandData(url);
-
         $.ajax({url: url + suffixOnRequests, dataType: "text"})
             .done(function(response, status, xhr ){
 
-                var info = d.read('info');
-                if(info.parsing_method){
-                    info.file_text = response;
-                    info.dependencies = info.parsing_method.call();
-                }
-                info.status = info.dependencies ? 'gather' : 'done'; // look for dependencies
-                d.write(info, 'info');
+                console.log('got:'+url);
 
+                var info = infoData.read(url);
+                info.file_text = response;
+                info.status = 'loaded';
+                updateFileInfo(info, url);
 
             })
             .fail(function(){
 
-                var info = d.read('info');
+                console.log('fail:'+url);
+                var info = infoData.read(url);
                 info.error_count++;
                 info.status = info.error_count > 3 ? 'failed' : 'error';
-                d.write(info, 'info');
+                updateFileInfo(info, url);
 
             });
     }
 
-    function infoChange(info){
+    //if(info.parsing_method){
+    //    info.file_text = response;
+    //    info.direct_dependencies = info.parsing_method.call(null, info); // [{url: x, parsing_method: f}]
+    //}
+    //
+    //info.status = info.direct_dependencies.length > 0 ? 'gather' : 'done'; // look for dependencies
 
-        switch(info.status){
-            case 'new':
-                download(info.url);
-                break;
-            case 'failed':
-                noteFailed(info);
-                break;
-            case 'error':
-                retryDownload(info);
-                break;
-            case 'done':
-                noteDone(info);
-                break;
-            case 'gather':
-                downloadDependencies(info);
-                break;
-
-        }
-    }
 
     function considerDependencies(originUrl, dependencyInfo){
 
         var fully_loaded = true; // assertion to disprove
         var origin = fileMonitor.demandData(originUrl);
-        var info = origin.read('info');
+        var origin_info = origin.read('info');
 
-        info.dependencies_status[dependencyInfo.url] = dependencyInfo.status;
+        origin_info.dependencies_status[dependencyInfo.url] = dependencyInfo.status;
 
-        for(var dependencyUrl in info.dependencies){
-            var status = info.dependencies_status[dependencyUrl];
-            if(info.status !== 'failed' && status === 'failed'){
-                info.status = 'failed';
-                origin.write(info, 'info');
-                break;
-            } else if (info.status !== 'done'){
+        for(var i = 0; i < origin_info.dependencies.length; i++){
+            var dependency = origin_info.dependencies[i];
+            var dependency_status = origin_info.dependencies_status[dependency.url];
+
+            if(dependency_status === 'failed'){
+                origin_info.status = 'failed';
+                origin.write(origin_info, 'info');
+                return;
+            } else if (dependency_status !== 'done'){
                 fully_loaded = false;
                 break;
             }
+
         }
 
-        if(fully_loaded){
-            info.status = 'done';
-            origin.write(info, 'info');
+        if(fully_loaded || origin_info.dependencies.length === 0){
+            origin_info.status = 'done';
+            origin.write(origin_info, 'info');
         }
-
 
     }
 
-    function downloadDependencies(info){
+    //function addDependencies(receiverInfo, dependencyList) {
+    //
+    //    var receiverUrl = receiverInfo.url;
+    //    var receiver = fileMonitor.demandData(receiverUrl);
+    //
+    //    dependencyList.forEach(function (d) { // {url, parsing_method }
+    //        if (receiverInfo.all_dependencies[d.url]) {
+    //
+    //        }
+    //    });
+    //
+    //}
+    //
 
-        var originUrl = info.url;
-        var parent = fileMonitor.demandData(originUrl);
+    function addDependencies(url, dependencies){
 
-        var files = info.dependencies;
-        for(var i = 0; i < files.length; i++){
-            var file = files[i];
-            var dependency = fileMonitor.demandData(file);
-            dependency.on('failed').host(originUrl).emit('dependency').pipe(parent);
-            dependency.on('done').host(originUrl).emit('dependency').pipe(parent);
-        }
+    }
+
+    function downloadDependencies(url) {
+        var info = infoData.read(url);
+        addDependencies(url, info.direct_dependencies);
+    }
+
+    function g(){
+        receiverInfo.direct_dependencies.forEach(function(d){ // {url, parsing_method }
+            if(receiverInfo.all_dependencies[d.url]){
+
+            }
+        });
 
         var dependencyChange = function(dependencyInfo){
+            console.log('dep change',originUrl, dependencyInfo);
             considerDependencies(originUrl, dependencyInfo);
         };
 
-        parent.on('dependency').run(dependencyChange);
+        var dependencyAdded = function(dependencyInfo){
+            var receiver_info = receiver.read('info');
+            var added = false;
+            for(var i = 0; i < dependencyInfo.direct_dependencies.length; i++){
+                var required_file = dependencyInfo.direct_dependencies[i];
+                if(!receiver_info.status_of_required_files.hasOwnProperty(required_file.url)){
+                    receiver_info.status_of_required_files[required_file.url] = 'new'; // as in unresolved
+                    added = true;
+                }
+            }
+            if(added)
+                receiver.write('require', dependencyInfo);
+        };
+
+
+
+        receiver.write(info, 'require');
+
+        for(var i = 0; i < dependencies.length; i++){
+
+            var dependency = dependencies[i];
+            var download = ohmu.request(dependency.url, dependency.parsing_method);
+            download.on('require').host(originUrl).run(dependencyAdded).auto();
+            download.on('failed').host(originUrl).run(dependencyChange).auto();
+            download.on('done').host(originUrl).run(dependencyChange).auto();
+
+        }
+
+        //receiver.on('dependency').run(dependencyChange).auto();
 
     }
+    //
+    //function monitorDependency(receiver, dependencyUrl){
+    //    var download = ohmu.request(dependency.url, dependency.parsing_method);
+    //    download.on('require').host(originUrl).run(dependencyAdded).auto();
+    //    download.on('failed').host(originUrl).run(dependencyChange).auto();
+    //    download.on('done').host(originUrl).run(dependencyChange).auto();
+    //}
 
-    function retryDownload(info){
+    function retryDownload(url){
 
+        var info = infoData.read(url);
         var delay = info.error_count * 1000;
         setTimeout(function(){
-            download(info.url);
+            download(url);
         }, delay);
 
     }
 
+    function noteFailed(url){
 
-   function noteFailed(info){
-
-       var d = fileMonitor.demandData(info.url);
-       d.write(info, 'failed');
-
-   }
+        //var info = infoData.read(url);
+        //
+        //var d = fileMonitor.demandData(info.url);
+        //d.write(info, 'failed');
+        //console.log('FAILED:'+info.url);
+    }
 
     function noteDone(info){
 
-        var d = fileMonitor.demandData(info.url);
-        d.write(info, 'done');
+        //var d = fileMonitor.demandData(info.url);
+        //d.write(info, 'done');
+        //console.log('done:'+info.url);
 
     }
 

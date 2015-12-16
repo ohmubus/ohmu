@@ -1,5 +1,5 @@
 /**
- * catbus.js (v2.0.11)
+ * catbus.js (v2.0.12)
  *
  * Copyright (c) 2015 Scott Southworth, Landon Barnickle & Contributors
  *

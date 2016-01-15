@@ -1,14 +1,14 @@
 const path      = require("path")
     , exec      = require("child_process").exec
-    , through   = require("through")
+    , through   = require("through");
 
 const gulp      = require("gulp")
-    , gConn     = require("gulp-connect")
+    , gConn     = require("gulp-connect");
 
 const paths = {
     lib: "lib/*",
     vendor_dist: "lib/vendor"
-}
+};
 
 const vendor = [
     "node_modules/sinon/pkg/sinon.js",
@@ -17,13 +17,13 @@ const vendor = [
     "node_modules/mocha/mocha.js",
     "node_modules/mocha/mocha.css",
     "node_modules/should/should.js"
-]
+];
 
 const connectConf = {
     port: process.env.PORT || 3005,
     root: path.join(__dirname, "lib"),
     livereload: process.env.RELOAD === "false" ? false : true
-}
+};
 
 /*
  *gulp.task("bark", () => { console.log(process.argv)})

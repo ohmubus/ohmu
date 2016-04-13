@@ -1,0 +1,43 @@
+<!doctype html>
+<html>
+    <head>
+        <link rel="stylesheet" href="vendor/mocha.css">
+        <style>
+            body {
+                font-family: sans-serif;
+            }
+
+            .mah-tests {
+                padding-left: 3rem;
+            }
+        </style>
+    </head>
+
+    <body>
+        <div class="mah-tests">
+            <h1> The Ohmu Are Coming </h1>
+            <div id="mocha"></div>
+        </div>
+
+        <script src="vendor/sinon.js" type="application/javascript"></script>
+        <script src="vendor/should.js" type="application/javascript"></script>
+        <script src="vendor/mocha.js" type="application/javascript"></script>
+
+        <script src="vendor/jquery.js" type="application/javascript"></script>
+        <script src="vendor/catbus.js" type="application/javascript"></script>
+        <script src="ohmu.js" type="application/javascript"></script>
+
+        <script type="application/javascript">
+            mocha.setup("bdd")
+        </script>
+
+        <script src="test-ohmu.js"></script>
+
+        <script type="application/javascript">
+            mocha.checkLeaks()
+            mocha.globals(["jQuery", "catbus", "LiveReload"])
+            mocha.run()
+        </script>
+    </body>
+</html>
+
